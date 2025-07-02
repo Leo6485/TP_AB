@@ -44,5 +44,6 @@ public:
 };
 
 int calc(const vector<int>& path, const vector<vector<int>>& machines);
+int calcula_ociosidade(const vector<int>& path, const vector<vector<int>>& machines);
 
 #endif

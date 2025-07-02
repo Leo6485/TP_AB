@@ -22,15 +22,16 @@ int main() {
     }
     for (int i = 0; i < num_items; i++) {
         for (int j = 0; j < num_items; j++) {
+            if (i == j) continue;
             vector<int> p = {i, j};
-            int dist = calc(p, g.machines);
+            int dist = calcula_ociosidade(p, g.machines);
             g.add_conn(i, j, dist);
         }
     }
 
-    int Q = 10;
+    int Q = 100;
 
-    g.set(1, 10, Q, 0.5);
+    g.set(1, 5, Q, 0.5);
     g.run(0, 2000, num_items);
 
     g.save("out.csv");

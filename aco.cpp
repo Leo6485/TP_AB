@@ -28,7 +28,7 @@ void Aco::set(int a, int b, int Q_, float e_) {
 
 void Aco::add_conn(int v, int u, int w) {
     dists[v][u] = w;
-    dists[u][v] = w;
+    // dists[u][v] = w;
 }
 
 void Aco::add_machine(int item, int machine, int w) {
@@ -73,11 +73,11 @@ void Aco::update_acumulado(vector<int>& path, int result, int e) {
     double value = e * ((double)Q / result);
     for (int i = 1; i < size; i++) {
         acumulado[path[i - 1]][path[i]] += value;
-        acumulado[path[i]][path[i - 1]] += value;
+        // acumulado[path[i]][path[i - 1]] += value;
     }
 
-    acumulado[path[0]][path.back()] += value;
-    acumulado[path.back()][path[0]] += value;
+    // acumulado[path[0]][path.back()] += value;
+    // acumulado[path.back()][path[0]] += value;
 }
 
 void Aco::update() {
@@ -118,7 +118,7 @@ void Aco::run(int run_id, int generations, int num_ants) {
         int best = numeric_limits<int>::max();
         int mean = 0;
 
-        // #pragma omp parallel for
+        #pragma omp parallel for
         for (int i = 0; i < num_ants; i++) {
             vector<int> path;
             vector<bool> visitados(size, false);
@@ -127,17 +127,14 @@ void Aco::run(int run_id, int generations, int num_ants) {
 
             path.push_back(x);
             visitados[x] = true;
-            // int result = 0;
 
             // Caminho da formiga
             for (int j = 0; j < size - 1; j++) {
                 int next = get_next(path.back(), visitados);
-                // result += dists[next][path.back()];
                 visitados[next] = true;
                 path.push_back(next);
             }
 
-            // result += dists[path[0]][path.back()];
             int result = calc(path, machines);
 
             #pragma omp critical
@@ -178,9 +175,26 @@ int calc(const vector<int>& path, const vector<vector<int>>& machines) {
         // cout << item << " ";
         result[0] = result[0] + machines[item][0];
         for(int i = 1; i < machines[0].size(); i++) {
-            result[i] = max((result[i-1] + machines[item][i]), result[i + 1]);
+            result[i] = max((result[i-1]), result[i]) + machines[item][i];
         }
     }
     // cout << "\n";
     return result[result.size() - 2];
+}
+
+int calcula_ociosidade(const vector<int>& path, const vector<vector<int>>& machines) {
+    vector<int> result(machines[0].size(), 0);  // Tempo em que cada máquina estará disponível
+    int ocioso = 0;
+
+    for (auto &item : path) {
+        result[0] += machines[item][0];  // M1 processa em sequência
+        for (int i = 1; i < machines[0].size(); i++) {
+            int tempo_ideal = result[i - 1];     // Tarefa pronta para a máquina i
+            int maquina_livre = result[i];       // Máquina i estará livre
+            int inicio = max(tempo_ideal, maquina_livre);
+            ocioso += max(0, tempo_ideal - maquina_livre);  // Apenas se a máquina ficou parada
+            result[i] = inicio + machines[item][i];
+        }
+    }
+    return ocioso;
 }

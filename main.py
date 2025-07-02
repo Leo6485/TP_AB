@@ -9,7 +9,7 @@ def calc(path, machines):
     for item in path:
         result[0] = result[0] + machines[item][0]
         for i in range(1, 4):
-            result[i] = max(result[i-1] + machines[item][i], result[i+1])
+            result[i] = max(result[i-1], result[i]) + machines[item][i]
         print(result)
 
 calc([2, 1, 0], machines)
