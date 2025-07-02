@@ -183,18 +183,18 @@ int calc(const vector<int>& path, const vector<vector<int>>& machines) {
 }
 
 int calcula_ociosidade(const vector<int>& path, const vector<vector<int>>& machines) {
-    vector<int> result(machines[0].size(), 0);  // Tempo em que cada máquina estará disponível
+    vector<int> result(machines[0].size() + 1, 0);
     int ocioso = 0;
-
     for (auto &item : path) {
-        result[0] += machines[item][0];  // M1 processa em sequência
-        for (int i = 1; i < machines[0].size(); i++) {
-            int tempo_ideal = result[i - 1];     // Tarefa pronta para a máquina i
-            int maquina_livre = result[i];       // Máquina i estará livre
-            int inicio = max(tempo_ideal, maquina_livre);
-            ocioso += max(0, tempo_ideal - maquina_livre);  // Apenas se a máquina ficou parada
-            result[i] = inicio + machines[item][i];
+        // cout << item << " ";
+        result[0] = result[0] + machines[item][0];
+        for(int i = 1; i < machines[0].size(); i++) {
+            int tempo_ideal = result[i-1]; // Tempo ideal para começar o serviço
+            int maquina_livre = result[i]; // Tempo quando a próxima máquina poderá ser utilizada
+            ocioso += abs(maquina_livre - tempo_ideal);
+            result[i] = max((result[i-1]), result[i]) + machines[item][i];
         }
     }
+    // cout << "\n";
     return ocioso;
 }
