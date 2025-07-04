@@ -14,32 +14,27 @@ using namespace std;
 
 class Aco {
 public:
-    vector<vector<double>> data;
-    vector<vector<double>> acumulado;
-    vector<vector<int>> dists; // Grafo
+    vector<vector<double>> pheromones;
+    vector<vector<double>> probabilities;
+    vector<vector<double>> dists; // Grafo
     vector<vector<int>> machines; // Máquinas
 
+    int num_itens;
+    int num_machines;
 
-    float evaporacao;
-    int size;
-
-    int alfa;
-    int beta;
+    double alfa;
+    double beta;
     double Q;
-    double e;
+    double evaporacao;
 
-    ostringstream csv;
-
-    Aco(int n, int m, int a, int b, int Q_, float e_);
-    void add_conn(int v, int u, int w);
-    void add_machine(int item, int machine, int w);
-    int get_next(int v, vector<bool>& visitados);
-    void update_acumulado(vector<int>& path, int result, int e);
-    void update();
-    void show();
-    void save(string filename);
+    Aco(int n, int m, int a, int b, int Q_, float evaporacao_);
+    void add_item_distance(int v, int u, int w);
+    void add_item_machine_time(int item, int machine, int w);
+    int get_next_item(int v, vector<bool>& visitados, int items_left);
+    void evaporate();
+    void paths_pheromones(vector<vector<int>>& path, vector<int> result);
+    void att_probabilities();
     void run(int run_id, int generations, int num_ants);
-    void set(int a, int b, int Q_, float e);
     ~Aco();
 };
 
