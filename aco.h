@@ -16,8 +16,8 @@ class Aco {
 public:
     vector<vector<double>> pheromones;
     vector<vector<double>> probabilities;
-    vector<vector<double>> dists; // Grafo
     vector<vector<int>> machines; // Máquinas
+    vector<vector<int>> itens_raw_time;
 
     int num_itens;
     int num_machines;
@@ -28,17 +28,15 @@ public:
     double evaporacao;
 
     Aco(int n, int m, int a, int b, int Q_, float evaporacao_);
-    void add_item_distance(int v, int u, int w);
+    void calculate_raw_times();
     void add_item_machine_time(int item, int machine, int w);
-    int get_next_item(int v, vector<bool>& visitados, int items_left);
+    int get_next_item(int v, vector<int>& makespan, vector<bool>& visitados, int items_left);
     void evaporate();
+    void path_pheromones(vector<int>& path, int result);
     void paths_pheromones(vector<vector<int>>& path, vector<int> result);
     void att_probabilities();
     void run(int run_id, int generations, int num_ants);
     ~Aco();
 };
-
-int calc(const vector<int>& path, const vector<vector<int>>& machines);
-int calcula_ociosidade(const vector<int>& path, const vector<vector<int>>& machines);
 
 #endif
