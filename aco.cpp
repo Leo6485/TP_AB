@@ -1,189 +1,153 @@
-#include "aco.h"
+#include "aco.hpp"
 #include <omp.h>
 
-using namespace std;
+#define dbg(x) cout << #x << " == " << x << endl
 
-double p(double a, int b) {
-    double result = a;
+mt19937 globalGenerator(random_device{}());
 
-    if(b > 20) return pow(a, b);
-    if (b == 0) return 1.0;
+Aco::Aco(const Graph *_graph, const int _npop, const int _ngen, const double _alfa, const double _beta, const double _Q, const double _p) :
+    graph(_graph), npop(_npop), ngen(_ngen), alfa(_alfa), beta(_beta), Q(_Q), evaporation(1.0 - _p)
+{
+    num_items = graph->getNumRows();
+    num_machines = graph->getNumColumns(); 
 
-    for (int i = 0; i < (b - 1); i++) {
-        result *= a;
-    }
+    itens_raw_time.assign(num_items, vector<int> (num_items));
 
-    return result;
-}
+    pheromones.initGraph(num_items, num_items, STARTING_PHEROMONES);
 
-Aco::Aco(int n, int m, int a, int b, int Q_, float evaporacao_) {
-    machines.assign(n, vector<int>(m, 0));
-    pheromones.assign(n, vector<double>(n, 1e-16));
-    probabilities.assign(n, vector<double>(n));
-    itens_raw_time.assign(n, vector<int>(n));
-    
-    num_itens = n;
-    num_machines = m;
-    
-    alfa = a;
-    beta = b;
-    Q = Q_;
-    evaporacao = 1 - evaporacao_;
-
-    att_probabilities();
+    min_makespan = numeric_limits<double>::max();
+    sum_costs = 0.0;
 }
 
 void Aco::calculate_raw_times() {
-    for (int i = 0; i < num_itens; i++) {
+    for (int i = 0; i < num_items; i++) {
         vector<int> makespan(num_machines);
-        makespan[0] = machines[i][0];
+        makespan[0] = graph->getEdge(i, 0);
         for (int j = 1; j < num_machines; j++) {
-            makespan[j] = makespan[j - 1] + machines[i][j];
+            makespan[j] = makespan[j - 1] + graph->getEdge(i, j);
         }
 
-        for (int j = 0; j < num_itens; j++) {
+        for (int j = 0; j < num_items; j++) {
             if (j == i) continue;
             vector<int> copy = makespan;
-            copy[0] += machines[j][0];
+            copy[0] += graph->getEdge(j, 0);
             for (int k = 1; k < num_machines; k++) {
                 copy[k] = max(copy[k-1], copy[k]);
-                copy[k] += machines[j][k];
+                copy[k] += graph->getEdge(j, k);
             }
             itens_raw_time[i][j] = copy[num_machines - 1] - makespan[num_machines - 1];
         }
     }
 }
 
-void Aco::add_item_machine_time(int item, int machine, int w) {
-    machines[item][machine] = w;
+int Aco::getNextItem(int v, vector<int> &makespan, vector<bool>& visited, int items_left){
+    double current_final = makespan[num_machines-1];
+    vector<double> weights(1, 0.0);
+    vector<int> nodes;
+    nodes.reserve(items_left);
+    double total = 0.0;
+
+    for (int node = 0; node < num_items; node++) {
+        if (visited[node]) continue;
+             
+        int new_finish = makespan[0] + graph->getEdge(node, 0);
+        for (int j = 1; j < num_machines; j++) {
+            new_finish = max(new_finish, makespan[j]);
+            new_finish += graph->getEdge(node, j);
+        }
+        double delta = new_finish - current_final;
+        delta = max(delta, 1e-16); // Evitar divisão por 0
+
+        double heuristic = 1.0 / delta;
+        double pheromone = pheromones.getEdge(v, node);
+
+        double weight = utils::pow(pheromone, alfa) * utils::pow(heuristic, beta);
+        total += weight;
+
+        weights.push_back(total);
+        nodes.push_back(node);
+    }
+
+    int idx = 0;
+    if (items_left > 1) {
+        uniform_real_distribution<double> dist(0.0, total);
+        double r = dist(globalGenerator);
+
+        auto it = lower_bound(weights.begin() + 1, weights.end(), r);
+        idx = distance(weights.begin() + 1, it);
+    }
+
+    int chosen_node = nodes[idx];
+
+    makespan[0] += graph->getEdge(chosen_node, 0);
+    for (int j = 1; j < num_machines; j++) {
+        makespan[j] = max(makespan[j-1], makespan[j]);
+        makespan[j] += graph->getEdge(chosen_node, j);
+    }
+
+    visited[chosen_node] = true;
+    return chosen_node;
 }
 
-int Aco::get_next_item(
-    int v,
-    vector<int>& makespan,
-    vector<bool>& visitados,
-    int items_left
-) {
-    vector<double> weights(items_left + 1);
-    vector<int> nodes(items_left);
-    vector<vector<int>> prob_makespans(items_left, vector<int> (makespan));
-    weights[0] = 0;
+pair<vector<int>, double> Aco::buildSequence(const int first_task){
+    vector<int> sequence (num_items);
+    vector<bool> visited (num_items, false);
+    vector<int> makespan (num_machines);
 
-    double total = 0;
-    int i = 0;
-    for (int node = 0; node < num_itens; node++) {
-        if (!visitados[node]) {
-            prob_makespans[i][0] = prob_makespans[i][0] + machines[node][0];
-            for(int j = 1; j < num_machines; j++) {
-                prob_makespans[i][j] = max(prob_makespans[i][j-1], prob_makespans[i][j]);
-                prob_makespans[i][j] += machines[node][j];
-            }
-            double delta = prob_makespans[i][num_machines - 1] - makespan[num_machines - 1];
-            total += probabilities[v][node] * pow(1 / delta, beta);
-            weights[i+1] = total;
-            nodes[i] = node;
-            i++;
+    visited[first_task] = true;
+
+    sequence[0] = first_task;
+    makespan[0] = graph->getEdge(first_task, 0);
+
+    for(int i = 1; i < num_machines; ++i){
+        makespan[i] = makespan[i-1] + graph->getEdge(first_task, i);
+    }
+
+    for(int i = 1; i < num_items; ++i){ 
+        sequence[i] = getNextItem(sequence[i-1], makespan, visited, num_items - i);
+    }
+
+    double result = makespan[num_machines - 1]; 
+    sum_costs += result;    
+    return make_pair(sequence, result);
+}
+
+void Aco::updatePheromones(const Graph &used_costs){
+    for(int i = 0; i < num_items; ++i){
+        for(int j = 0; j < num_items; ++j){
+            double new_pheromone = evaporation * pheromones.getEdge(i, j) + used_costs.getEdge(i, j);
+
+            new_pheromone = max(new_pheromone, STARTING_PHEROMONES);
+            
+            pheromones.setEdge(i, j, new_pheromone); 
         }
     }
-    
-    double pos = ((double)rand() / RAND_MAX) * weights[items_left];
-
-    for (i = 1; i < items_left; i++) {
-        if (weights[i] >= pos) break;
-    }
-    int i_1 = i-1;
-    makespan = prob_makespans[i_1];
-    visitados[nodes[i_1]] = true;
-    return nodes[i_1];
-    
 }
 
-void Aco::evaporate() {
-    #pragma omp parallel for
-    for (int i = 0; i < num_itens; i++) {
-        for (int j = 0; j < num_itens; j++) {
-            pheromones[i][j] *= evaporacao;
-            if (pheromones[i][j] == 0)
-                pheromones[i][j] = 1e-16;
-        }   
+void Aco::updateUsedCosts(Graph &used_costs,
+                     const pair<vector<int>, double> &sequence_info){ 
+    double gbest_bonus = Q / min_makespan;
+          
+    bool is_gbest = sequence_info.first == best_sequence;
+
+    for(int i = 0; i < num_items - 1; ++i){
+        int src = sequence_info.first[i];
+        int dest = sequence_info.first[i+1];
+
+        double increment = Q / sequence_info.second;
+        used_costs.incrementEdge(src, dest, increment);
+
+        // Incremento adicional nos feromônios se a sequência for a Gbest
+        if(is_gbest)
+            used_costs.incrementEdge(src, dest, gbest_bonus);
     }
 }
 
-void Aco::path_pheromones(vector<int>& path, int result) {
-    double value = (double)Q / result;
-    for (int i = 1; i < num_itens; i++) {
-        int from = path[i-1];
-        int to = path[i];
-        pheromones[from][to] += value;
+void Aco::buildAntsStart(vector<int> &ants_start){
+    uniform_int_distribution<> dis(0, graph->getNumRows() - 1);
+    for(int &ant : ants_start){ 
+        ant = dis(globalGenerator);
     }
-}
-
-void Aco::paths_pheromones(vector<vector<int>>& path, vector<int> result) {
-    int num_ants = path.size();
-    for (int ant = 0; ant < num_ants; ant++) {
-        path_pheromones(path[ant], result[ant]);
-    }
-}
-
-void Aco::att_probabilities() {
-    #pragma omp parallel for
-    for (int i = 0; i < num_itens; i++) {
-        for (int j = 0; j < num_itens; j++) {
-            probabilities[i][j] = pow(pheromones[i][j], alfa);
-        }   
-    }
-}
-
-void Aco::run(int run_id, int generations, int num_ants) {
-
-    int global_best = numeric_limits<int>::max();
-    vector<int> best_path;
-    
-    for (int h = 0; h < generations; h++) {
-        vector<vector <int>> ant_paths(num_ants);
-        vector<int> ant_paths_results(num_ants);
-        //#pragma omp parallel for
-        for (int i = 0; i < num_ants; i++) {
-            vector<int> path(num_itens);
-            vector<int> makespan(num_machines);
-            vector<bool> visitados(num_itens, false);
-            
-            path[0] = rand() % num_itens; // Primeiro vértice
-            visitados[path[0]] = true;
-            makespan[0] = machines[path[0]][0];
-            for(int i = 1; i < num_machines; i++) {
-                makespan[i] = makespan[i-1] + machines[path[0]][i];
-            }
-
-            // Caminho da formiga
-            for (int j = 1; j < num_itens; j++) {
-                path[j] = get_next_item(path[j-1], makespan, visitados, num_itens - j);
-            }
-
-            int result = makespan[num_machines - 1];
-            ant_paths[i] = path;
-            ant_paths_results[i] = result;
-
-            //#pragma omp critical
-            {
-                if (result < global_best) {    
-                    global_best = result;
-                    best_path = path;
-                    cout << global_best << " " << h << "\n";
-                }
-            }
-        }   
-        // Update data
-        evaporate();
-        paths_pheromones(ant_paths, ant_paths_results);
-        path_pheromones(best_path, global_best * 8);
-        att_probabilities();
-    }
-    cout << global_best << "\n";
-    for (int i = 0; i < num_itens; i++) {
-        cout << best_path[i] << " ";
-    }
-    cout << "\n";
 }
 
 Aco::~Aco() {}

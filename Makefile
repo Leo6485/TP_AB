@@ -1,15 +1,26 @@
 CXX = g++
-FLAGS = -Wall -g -fsanitize=address -O3 -fopenmp
-SRC = main.cpp aco.cpp
-TARGET = x
+FLAGS = -Wall -g -O3 -fopenmp
+BINARYDIR = binary
+EXENAME = aco
 
-all: $(TARGET)
+SRCS = $(filter-out main.cpp, $(wildcard *.cpp))
+OBJS = $(SRCS:%.cpp=$(BINARYDIR)/%.o)
 
-$(TARGET): $(SRC)
-	$(CXX) $(FLAGS) -o $(TARGET) $(SRC)
+.PHONY: all clean
 
-run: $(TARGET)
-	./$(TARGET)
+all: $(BINARYDIR) $(EXENAME)
+
+$(EXENAME) : $(OBJS) $(BINARYDIR)/main.o
+	$(CXX) $(FLAGS) $^ -o $@ -lm
+
+$(BINARYDIR)/%.o: %.cpp %.hpp
+	$(CXX) $(FLAGS) -c $< -o $@ -lm
+
+$(BINARYDIR)/main.o: main.cpp
+	$(CXX) $(FLAGS) -c $< -o $@ -lm
+
+$(BINARYDIR):
+	test ! -d $(BINARYDIR) && mkdir $(BINARYDIR)
 
 clean:
-	rm -f $(TARGET)
+	rm -rf $(BINARYDIR)/* $(EXENAME)
