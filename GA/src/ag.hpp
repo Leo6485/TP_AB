@@ -27,6 +27,7 @@ class Ag{
         void initPopulation();
         void evaluatePopulation();
         void twoOpt();
+        void threeOpt();
         vector<int> parentsSelection(const int selection_id);
         vector<int> tournamentSelection();
         vector<int> rouletteSelection();

@@ -29,6 +29,7 @@ void Solve::solve(ifstream &input_file, const int crossover_id,
     for(int generation = 0; generation < ag->ngen; ++generation){
         ag->evaluatePopulation();
         ag->twoOpt();
+        ag->threeOpt();
         vector<int> parents = ag->parentsSelection(selection_id);
 
         ag->crossover(parents, crossover_id);

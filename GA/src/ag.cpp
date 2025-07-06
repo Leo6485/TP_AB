@@ -70,6 +70,82 @@ void Ag::twoOpt() {
     }
 }
 
+void Ag::threeOpt() {
+    std::mt19937 rng(std::random_device{}());
+    uniform_int_distribution<int> dist(0, instance.n - 1);
+
+    for (int idv = 0; idv < npop; ++idv) {
+        vector<int>& chromo = population[idv];
+        int bestFitness = (rand() % 10 == 0) ? INFINITY : fitness[idv];
+
+        for (int t = 0; t < 500; ++t) {
+            int i = dist(rng), j = dist(rng), k = dist(rng);
+            if (i == j || j == k || i == k) continue;
+
+            // Ordena i < j < k
+            if (i > j) std::swap(i, j);
+            if (j > k) std::swap(j, k);
+            if (i > j) std::swap(i, j);
+
+            // Divide em 4 segmentos: [0,i), [i,j), [j,k), [k,end)
+            vector<int> A(chromo.begin(), chromo.begin() + i);
+            vector<int> B(chromo.begin() + i, chromo.begin() + j);
+            vector<int> C(chromo.begin() + j, chromo.begin() + k);
+            vector<int> D(chromo.begin() + k, chromo.end());
+
+            vector<vector<int>> variations = {
+                // original: A B C D
+                chromo, // original
+                // 1: A C B D
+                [] (const vector<int>& A, const vector<int>& B, const vector<int>& C, const vector<int>& D) {
+                    vector<int> tmp = A;
+                    tmp.insert(tmp.end(), C.begin(), C.end());
+                    tmp.insert(tmp.end(), B.begin(), B.end());
+                    tmp.insert(tmp.end(), D.begin(), D.end());
+                    return tmp;
+                }(A, B, C, D),
+                // 2: A rev(B) rev(C) D
+                [] (const vector<int>& A, vector<int> B, vector<int> C, const vector<int>& D) {
+                    reverse(B.begin(), B.end());
+                    reverse(C.begin(), C.end());
+                    vector<int> tmp = A;
+                    tmp.insert(tmp.end(), B.begin(), B.end());
+                    tmp.insert(tmp.end(), C.begin(), C.end());
+                    tmp.insert(tmp.end(), D.begin(), D.end());
+                    return tmp;
+                }(A, B, C, D),
+                // 3: A rev(C) B D
+                [] (const vector<int>& A, const vector<int>& B, vector<int> C, const vector<int>& D) {
+                    reverse(C.begin(), C.end());
+                    vector<int> tmp = A;
+                    tmp.insert(tmp.end(), C.begin(), C.end());
+                    tmp.insert(tmp.end(), B.begin(), B.end());
+                    tmp.insert(tmp.end(), D.begin(), D.end());
+                    return tmp;
+                }(A, B, C, D)
+            };
+
+            for (const auto& candidate : variations) {
+                // Calcula makespan
+                vector<int> result(instance.machines[0].size() + 1, 0);
+                for (auto& item : candidate) {
+                    result[0] += instance.machines[item][0];
+                    for (int m = 1; m < (int)instance.machines[0].size(); ++m) {
+                        result[m] = max(result[m - 1], result[m]) + instance.machines[item][m];
+                    }
+                }
+                int newFitness = result[result.size() - 2];
+                if (newFitness < bestFitness) {
+                    chromo = candidate;
+                    bestFitness = newFitness;
+                    break;
+                }
+            }
+        }
+
+        fitness[idv] = bestFitness;
+    }
+}
 
 
 vector<int> Ag::rouletteSelection(){
