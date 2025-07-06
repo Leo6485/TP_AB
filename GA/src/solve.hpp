@@ -19,7 +19,7 @@ class Solve{
                                   const int crossover_id, const int selection_id);
     public:
         void solve(ifstream &input_file_name, const int crossover_id,
-                   const int selection_id);
+                   const int selection_id, ofstream &output_file);
         void factorialTest(ifstream &input_file, ofstream &output_file,
                            const int crossover_id, const int selection_id);
         void generationsTest(ifstream &input_file, ofstream &output_file,

@@ -7,6 +7,7 @@
 
 using namespace std;
 
+// Imprime as informações do algoritmo em uma tabela CSV
 class BuildCSV{
     public:
         void printGenIdfCSV(Ag *ag, ofstream &gen_file);

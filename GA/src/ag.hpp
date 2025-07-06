@@ -39,7 +39,7 @@ class Ag{
         void mutation();
         void copyPopulation();
         void elitism();
-        void printResults() const;
+        void printResults(ofstream &output_file);
         void printPopulation() const;
 
         Ag(const Instance &_instance, int _npop, int _ngen, int _ngenes, int _nelite,

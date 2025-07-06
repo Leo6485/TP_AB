@@ -8,9 +8,10 @@
 using namespace std;
 
 void Solve::solve(ifstream &input_file, const int crossover_id,
-                  const int selection_id){
+                  const int selection_id, ofstream &output_file){
+    // Parâmetros do algoritmo
     const int npop = 200;
-    const int ngen = 20000;
+    const int ngen = 2000;
     const int nelite = 6;
     const double pcrossover = 0.9;
     const double pwinner = 0.9;
@@ -28,8 +29,14 @@ void Solve::solve(ifstream &input_file, const int crossover_id,
 
     for(int generation = 0; generation < ag->ngen; ++generation){
         ag->evaluatePopulation();
-        ag->twoOpt();
-        ag->threeOpt();
+
+        if(ag->count_gen_local_min > 50)
+            ag->twoOpt();
+
+        if(ag->count_gen_local_min > 100){
+            ag->threeOpt();
+        }
+        
         vector<int> parents = ag->parentsSelection(selection_id);
 
         ag->crossover(parents, crossover_id);
@@ -38,10 +45,9 @@ void Solve::solve(ifstream &input_file, const int crossover_id,
         ag->elitism();
 
         ag->copyPopulation();
-        ag->printResults();
     }
 
-    ag->printResults();
+    ag->printResults(output_file);
 
     delete ag;
 }

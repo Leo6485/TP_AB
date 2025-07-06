@@ -8,6 +8,7 @@ using namespace std;
 class Io{
     public:
         string getInputFile(const int argc, char **argv);
+        string getOutputFile(const int argc, char **argv);
         string getFacOutputFile() const;
         string getGenOutputFile() const;
         int getSolutionId(const int argc, char **argv);

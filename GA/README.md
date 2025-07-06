@@ -1,5 +1,7 @@
 # Algoritmo Genético para Resolver o Problema do Caixeiro Viajante (AG)
 
+Grupo: Leonardo Guimar
+
 Este projeto implementa um algoritmo genético com representação binária para encontrar uma solução aproximada do **Problema do Caixeiro Viajante (AG)**. O objetivo é selecionar a melhor combinação de arestas a serem utilizadas para visitar todos os vértices exatamente uma vez e retornar para o vértice inicial, de forma a minimizar o custo total das arestas utilizadas.
 
 ## Compilação e Execução

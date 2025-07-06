@@ -12,11 +12,9 @@ class Instance{
         int n; // Número de itens
         int m; // Número de máquinas
 
-        // vector<vector<int>> G;
         vector<vector<int>> machines;
 
         void readInstance(ifstream &input_file);
-        // int getEdge(int src, int dst) const;
 
         Instance();
 };

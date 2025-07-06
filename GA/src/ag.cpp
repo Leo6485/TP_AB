@@ -8,6 +8,7 @@ using namespace std;
 mt19937 globalGenerator(random_device{}());
 
 void Ag::initPopulation(){
+    // Inicializa a população inicial aleatória
     for(vector<int> &individual : population){
         iota(individual.begin(), individual.end(), 0);
         shuffle(individual.begin(), individual.end(), globalGenerator);
@@ -20,7 +21,7 @@ void Ag::evaluatePopulation(){
 
         for (auto &item : population[idv]) {
             result[0] = result[0] + instance.machines[item][0];
-            for(int i = 1; i < instance.machines[0].size(); i++) {
+            for(int i = 1; i < (int) instance.machines[0].size(); i++) {
                 result[i] = max((result[i-1]), result[i]) + instance.machines[item][i];
             }
         }
@@ -151,18 +152,25 @@ void Ag::threeOpt() {
 vector<int> Ag::rouletteSelection(){
     vector<int> parents (npop);
 
-    vector<long long> accumulated_fitness (npop + 1, 0);
+    // Calcula as probabilidades acumuladas
+    vector<double> accumulated_fitness (npop + 1, 0.0);
     for(int i = 1; i < npop + 1; ++i){
-        accumulated_fitness[i] = accumulated_fitness[i-1] + fitness[i];
+        accumulated_fitness[i] = accumulated_fitness[i-1] + 1.0 / fitness[i];
     }
 
-    uniform_int_distribution<> parent_distribution(accumulated_fitness[1],
-                                                   accumulated_fitness[npop]);
+    uniform_real_distribution<> parent_distribution(accumulated_fitness[1],
+                                                    accumulated_fitness[npop]);
 
+    // Seleciona os pais de maneira aleatória
     for(auto &parent : parents){
-        int r = parent_distribution(globalGenerator);
+        double r = parent_distribution(globalGenerator);
+
+        // Busca binária pelo primeiro valor menor ou igual ao valor aleatório
+        // gerado
         auto it_selected = lower_bound(accumulated_fitness.begin(),
                                        accumulated_fitness.end(), r);
+        
+        // O pai recebe o índice da posição encontrada pela busca binária
         parent = distance(accumulated_fitness.begin(), it_selected) - 1;
     }
     return parents;
@@ -402,6 +410,7 @@ void Ag::crossoverOX(vector<int> &parents){
 }
 
 void Ag::crossover(vector<int> &parents, int crossover_id){
+    // Seleciona qual maneira de crossover será utilizada pelo algoritmo  
     if(crossover_id == 1){
         crossoverOX(parents);
     } else if (crossover_id == 2){
@@ -418,6 +427,8 @@ void Ag::mutation(){
     uniform_real_distribution<> mutation_distribution(0.0, 1.0);
     uniform_int_distribution<> gene_distribution(0, ngenes - 1);
 
+    // Lógica de mutação incremental quando o algoritmo fica preso em um
+    // mínimo local
     auto it_local_min = min_element(fitness.begin(), fitness.end());
     if(*it_local_min < local_min){
         local_min = *it_local_min;
@@ -440,6 +451,8 @@ void Ag::mutation(){
                     gene_idx = gene_distribution(globalGenerator);
                 } while (gene_idx == j);
 
+                // Troca a posição de dois elementos do indivíduo
+                // selecionado da população intermediária
                 swap(intermediate_population[i][j],
                      intermediate_population[i][gene_idx]);
             }
@@ -448,6 +461,7 @@ void Ag::mutation(){
 }
 
 void Ag::copyPopulation(){
+    // Copia a população intermediária para a população original
     for(int i = 0; i < npop; ++i){
         copy(intermediate_population[i].begin(), intermediate_population[i].end(),
              population[i].begin());
@@ -455,11 +469,13 @@ void Ag::copyPopulation(){
 }
 
 void Ag::elitism(){
+    // Min heap
     priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> min_heap;
     for(int i = 0; i < npop; ++i){
         min_heap.push(make_pair(fitness[i], i));
     }
 
+    // Seleciona os nelite mais aptos para fazerem parte da nova população 
     for(int i = 0; i < nelite; ++i){
         pair<int, int> elite_idv = min_heap.top();
         min_heap.pop();
@@ -470,20 +486,17 @@ void Ag::elitism(){
     }
 }
 
-void Ag::printResults() const {
-    auto it_shortest_path = min_element(fitness.begin(), fitness.end());
-    int shortest_path_id = distance(fitness.begin(), it_shortest_path);
+// Imprime os resultados
+void Ag::printResults(ofstream &output_file) {
+    auto it_min_makespan = min_element(fitness.begin(), fitness.end());
+    int min_makespan_id = distance(fitness.begin(), it_min_makespan);
 
-    cout << "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" << endl;
-    cout << "                  Resumo dos Resultados                    " << endl;
-    cout << "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" << endl;
-    cout << " Menor distancia: " << *it_shortest_path << endl;
-    cout << " Caminho: ";
-    cout << population[shortest_path_id][0] << endl;
-    for(int i = 0; i < ngenes; ++i)
-        cout << " -> " << population[shortest_path_id][i];
-    cout << endl;
-    cout << "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" << endl;
+    output_file << "Melhor Makespan: " << *it_min_makespan << endl;
+    output_file << "Melhor Sequencia: " << population[min_makespan_id][0];
+    for(int i = 1; i < ngenes; ++i){
+        output_file << ' ' << population[min_makespan_id][i];
+    }
+    output_file << endl;
 }
 
 void Ag::printPopulation() const {

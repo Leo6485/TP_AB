@@ -13,10 +13,4 @@ void Instance::readInstance(ifstream &input_file){
             machines[i][j] = w;
         }
     }
-
-    // G.assign(n, vector<int>(n, 0));
 }
-
-// int Instance::getEdge(int src, int dst) const {
-    // return G[src][dst];
-// }
