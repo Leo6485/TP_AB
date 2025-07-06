@@ -1,8 +1,14 @@
 # Algoritmo Genético para Resolver o Problema do Caixeiro Viajante (AG)
 
-Grupo: Leonardo Guimar
+Grupo: Leonardo Guimarães de Oliveira, Guilherme Souza Barros, Vítor Oliveira Amorim.
+Disciplina: Algoritmos Bioinspirados
+Professora: Carolina Ribeiro Xavier
 
-Este projeto implementa um algoritmo genético com representação binária para encontrar uma solução aproximada do **Problema do Caixeiro Viajante (AG)**. O objetivo é selecionar a melhor combinação de arestas a serem utilizadas para visitar todos os vértices exatamente uma vez e retornar para o vértice inicial, de forma a minimizar o custo total das arestas utilizadas.
+## Introdução
+
+Este trabalho implementa um Algoritmo Genético (AG) para encontrar uma solução aproximada para o **Problema de Agendamento de Tarefas em Linha (Flow Shop Scheduling Problem - FSSP)**.
+
+O FSSP consiste em um conjunto de *N* tarefas que devem ser processadas em um conjunto de *M* máquinas. Todas as tarefas devem passar por todas as *M* máquinas na mesma ordem. O objetivo é determinar a ordem das tarefas para todas as máquinas que minimize o *makespan*, ou seja, o tempo total para que todas as tarefas sejam concluídas.
 
 ## Compilação e Execução
 
@@ -18,7 +24,7 @@ A execução permite escolher entre diferentes variações do algoritmo, usando 
 Além disso, é possível selecionar qual maneira de seleção de pais e de cruzamento serão utilizados. Para identificar a forma de seleção desejada, o **ID da seleção** deverá ser precedido pela flag `-p`. Já para identificar a forma de cruzamento desejada, o **ID do cruzamento** deverá ser precedido pela flag `-c`.
 
 ### ID das Soluções Disponíveis
-- `1`: solução básica (padrão)
+- `1`: solução simples (padrão)
 - `2`: solução que aplica um teste fatorial nos parâmetros do algoritmo genético e salva os resultados em um arquivo `.csv`.
 - `3`: solução que armazena os valores de fitness dos indivíduos em um arquivo `.csv`.
 
@@ -34,24 +40,26 @@ Além disso, é possível especificar os arquivos de entrada com as especificaç
 
 ### Exemplo de Execução
 ```bash
-./ag -i sbg128_dist.txt -c 2 -p 2 -s 1
+./ag -i sbg128_dist.txt -c 2 -p 1 -s 1
 ```
 
 ## Entrada e Saída
 ### Entrada
 
-O arquivo de entrada deve estar localizado na pasta `inputs/`, localizado na raíz do projeto. Por padrão, é assumido o arquivo de entrada: `lau15_dist.txt`.
+O arquivo de entrada deve estar localizado na pasta `inputs/`, localizado na raíz do projeto. Os arquivos de entrada devem seguir o formato `fssp_instance_XX.txt`. Por padrão, é assumido o arquivo de entrada: `fssp_instance_01.txt`.
 
-Este arquivo pode ser substituído. Para isso, o nome do novo arquivo deve ser precedido pela flag `-i`.
+Este arquivo pode ser substituído. Para isso, o *ID* do arquivo de entrada deve ser precedido pela flag `-i`.
 
 Para um exemplo de uso desta flag, vá para a seção [Exemplo de Execução](#exemplo-de-execucao)
 
 ### Saida
 
+O arquivo de saída terá nome `resultado_instancia_XX.txt`, onde *XX* será substituído pelo *ID* do arquivo de entrada executado.
+
 A saída depende da solução escolhida:
-- **Solução 1 (básica)**: imprime na saída padrão o fitness mínimo encontrado e a sequência de visitação das cidades (vértices);
-- **Solução 2 (teste fatorial)**: salva os resultados de cada conjunto de parâmetros no arquivo `data/results.csv`;
-- **Solução 3 (dados sobre as gerações)**: salva o fitness de cada geração no arquivo `data/generations.csv`.
+- **Solução 1 (básica)**: ;
+- **Solução 2 (teste fatorial)**: salva os resultados de cada conjunto de parâmetros no arquivo `data/tables/results.csv`;
+- **Solução 3 (dados sobre as gerações)**: salva o fitness de cada geração no arquivo `data/tables/generations.csv`.
 
 ### Exemplo de Saída do Programa
 ```
@@ -66,5 +74,3 @@ A saída depende da solução escolhida:
 ## Observações
 
 - Os parâmetros para testes fatoriais são definidos diretamente no código fonte. Ajuste como necessário antes de compilar.
-- Certifique-se que os arquivos de entrada estão corretamente formatados, como nos arquivos disponibilizados em [CITIES](https://people.sc.fsu.edu/~jburkardt/datasets/cities/cities.html)
-
