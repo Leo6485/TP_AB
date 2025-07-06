@@ -479,9 +479,10 @@ void Ag::printResults() const {
     cout << "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" << endl;
     cout << " Menor distancia: " << *it_shortest_path << endl;
     cout << " Caminho: ";
-    for(int i = 0; i < ngenes; ++i)
-        cout << population[shortest_path_id][i] << " -> ";
     cout << population[shortest_path_id][0] << endl;
+    for(int i = 0; i < ngenes; ++i)
+        cout << " -> " << population[shortest_path_id][i];
+    cout << endl;
     cout << "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" << endl;
 }
 
