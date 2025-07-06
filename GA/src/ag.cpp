@@ -30,44 +30,46 @@ void Ag::evaluatePopulation(){
 }
 
 void Ag::twoOpt() {
+    uniform_int_distribution<int> dist(0, instance.n - 1);
+    std::mt19937 rng(std::random_device{}());
+
     for (int idv = 0; idv < npop; ++idv) {
-        vector<int> &chromo = population[idv];
-        int bestFitness = fitness[idv];
-        bool improved = true;
+        vector<int>& chromo = population[idv];
+        // Probabilidade de substituir
+        int bestFitness = (rand() % 100 == 0) ? INFINITY : fitness[idv];
+        bool improved = false;
 
-        while (improved) {
-            improved = false;
+        for (int t = 0; t < 100; ++t) {
+            int i = dist(rng);
+            int j = dist(rng);
+            if (i == j) continue;
+            if (i > j) std::swap(i, j);
 
-            for (int i = 0; i < instance.n - 1; ++i) {
-                for (int j = i + 1; j < instance.n; ++j) {
-                    // Troca dois elementos
-                    reverse(chromo.begin() + i, chromo.begin() + j + 1);
+            reverse(chromo.begin() + i, chromo.begin() + j + 1);
 
-                    // Makespan calc
-                    vector<int> result(instance.machines[0].size() + 1, 0);
-                    for (auto &item : chromo) {
-                        result[0] = result[0] + instance.machines[item][0];
-                        for (int k = 1; k < (int)instance.machines[0].size(); ++k) {
-                            result[k] = max(result[k - 1], result[k]) + instance.machines[item][k];
-                        }
-                    }
-                    int newFitness = result[result.size() - 2];
-
-                    if (newFitness < bestFitness) {
-                        bestFitness = newFitness;
-                        improved = true;
-
-                    } else {
-                        // Desfaz
-                        reverse(chromo.begin() + i, chromo.begin() + j + 1);
-                    }
+            // Calcula makespan
+            vector<int> result(instance.machines[0].size() + 1, 0);
+            for (auto& item : chromo) {
+                result[0] = result[0] + instance.machines[item][0];
+                for (int k = 1; k < (int)instance.machines[0].size(); ++k) {
+                    result[k] = max(result[k - 1], result[k]) + instance.machines[item][k];
                 }
+            }
+            int newFitness = result[result.size() - 2];
+
+            if (newFitness < bestFitness) {
+                bestFitness = newFitness;
+                improved = true;
+            } else {
+                // Reverte a inversão se não melhorou
+                reverse(chromo.begin() + i, chromo.begin() + j + 1);
             }
         }
 
         fitness[idv] = bestFitness;
     }
 }
+
 
 
 vector<int> Ag::rouletteSelection(){
@@ -348,7 +350,7 @@ void Ag::mutation(){
     } else {
         count_gen_local_min += 1;
         if(count_gen_local_min >= 10){
-            extra_pmutation = 0.10;
+            extra_pmutation = 0.01;
         }
     }
 
