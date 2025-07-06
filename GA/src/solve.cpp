@@ -14,7 +14,7 @@ void Solve::solve(ifstream &input_file, const int crossover_id,
     const int nelite = 6;
     const double pcrossover = 0.9;
     const double pwinner = 0.9;
-    const double pmutation = 0.025;
+    const double pmutation = 0.01;
 
     Instance instance;
     instance.readInstance(input_file);
