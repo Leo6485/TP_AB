@@ -1,3 +1,1 @@
-Melhor Makespan: 2304
-Melhor Sequencia: 9 25 18 11 33 27 43 42 46 44 6 29 16 22 41 4 5 35 2 32 28 8 12 24 30 13 1 0 37 40 3 20 15 47 36 39 49 19 38 34 14 17 26 48 7 23 45 31 10 21
-Tempo de Execucao (segundos): 67.475050
+Tempo de Execucao (segundos): 19.732745

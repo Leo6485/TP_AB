@@ -21,9 +21,6 @@ void Solve::solve(ifstream &input_file, const int crossover_id,
     instance.readInstance(input_file);
     input_file.close();
 
-    // int ngen = instance.n * instance.m * 2;
-    // ngen = min(ngen, 3000);
-
     const int ngenes = instance.n;
 
     Ag *ag = new Ag(instance, npop, ngen, ngenes, nelite, pcrossover, pmutation, pwinner);
@@ -34,13 +31,9 @@ void Solve::solve(ifstream &input_file, const int crossover_id,
         ag->evaluatePopulation();
 
         if (generation % 2) ag->threeOpt(); 
-        if(ag->count_gen_local_min > sqrt(ngen)){ 
-            // if(ag->count_gen_local_min > sqrt(ngen) * 10) break; 
-        }
-
+        
         vector<int> parents = ag->parentsSelection(selection_id);
 
-        // cout << ag->local_min << "\n";
         ag->crossover(parents, crossover_id);
 
         ag->mutation();
@@ -56,7 +49,8 @@ void Solve::solve(ifstream &input_file, const int crossover_id,
 
 void Solve::factorialTest(ifstream &input_file, ofstream &output_file,
                           const int crossover_id, const int selection_id){
-    const int npop = 1000;
+    const int npop = 400;
+    const int ngen = 100;
     const int vnelite[] = {2, 6, 10, 20};
     const double pcrossover = 0.9;
     const double vpwinner[] = {0.9, 1.0};
@@ -65,10 +59,6 @@ void Solve::factorialTest(ifstream &input_file, ofstream &output_file,
     Instance instance;
     instance.readInstance(input_file);
     input_file.close();
-
-    
-    int ngen = instance.n * instance.m * 2;
-    ngen = min(ngen, 3000);
     
     const int ngenes = instance.n;
 
@@ -76,7 +66,7 @@ void Solve::factorialTest(ifstream &input_file, ofstream &output_file,
     csv_builder.printFacIdfCSV(output_file);
 
     int iteration = 0;
-    for (int ielite = 0; ielite < 3; ++ielite){
+    for (int ielite = 0; ielite < 4; ++ielite){
         for (int imutation = 0; imutation < 3; ++imutation){
             for (int ivpwinner = 0; ivpwinner < 2; ++ivpwinner){
                 cout << "Iteracao: " << iteration << endl;
@@ -105,11 +95,7 @@ void Solve::solveFactorialTest(Instance &instance, int npop, int ngen, int ngene
     for(int generation = 0; generation < ag->ngen; ++generation){
         ag->evaluatePopulation();
 
-        if(ag->count_gen_local_min > sqrt(ngen) * 5){ 
-            //if(ag->count_gen_local_min > sqrt(ngen) * 5 + sqrt(sqrt(ngen))) break; 
-            
-            ag->threeOpt(); 
-        }        
+        if (generation % 2) ag->threeOpt(); 
   
         vector<int> parents = ag->parentsSelection(selection_id);
         ag->crossover(parents, crossover_id);
@@ -130,6 +116,7 @@ void Solve::solveFactorialTest(Instance &instance, int npop, int ngen, int ngene
 void Solve::generationsTest(ifstream &input_file, ofstream &output_file,
                             const int crossover_id, const int selection_id){
     const int npop = 200;
+    const int ngen = 100;
     const int nelite = 10;
     const double pcrossover = 0.9;
     const double pwinner = 0.95;
@@ -138,9 +125,6 @@ void Solve::generationsTest(ifstream &input_file, ofstream &output_file,
     Instance instance;
     instance.readInstance(input_file);
     input_file.close();
-
-    int ngen = instance.n * instance.m * 2;
-    ngen = min(ngen, 1000);
 
     const int ngenes = instance.n;
 
@@ -164,10 +148,7 @@ void Solve::solveGenerationsTest(Instance &instance, int npop, int ngen, int nge
     for(int generation = 0; generation < ag->ngen; ++generation){
         ag->evaluatePopulation();
 
-        if(ag->count_gen_local_min > sqrt(ngen) * 5){
-            //if(ag->count_gen_local_min > sqrt(ngen) * 5 + sqrt(sqrt(ngen))) break; 
-            ag->threeOpt(); 
-        }        
+        if (generation % 2) ag->threeOpt(); 
 
         vector<int> parents = ag->parentsSelection(selection_id);
         ag->crossover(parents, crossover_id);

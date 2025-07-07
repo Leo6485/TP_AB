@@ -120,12 +120,14 @@ void Ag::threeOpt() {
         vector<int>& chromo = population[idv];
 
         // Ocasionalmente força a busca mesmo que ela não provoque melhora
-        int best_fitness = (uniform_int_distribution<int>(0, 4)(globalGenerator) == 0) ? INFINITY : fitness[idv];
+        int best_fitness = (uniform_int_distribution<int>(0, 4)
+                           (globalGenerator) == 0) ? INFINITY : fitness[idv];
         vector<int> candidate = chromo;
 
         for (int t = 0; t < 1000; ++t) {
             // Sorteia 3 posições distintas
-            int i = dist(globalGenerator), j = dist(globalGenerator), k = dist(globalGenerator);
+            int i = dist(globalGenerator), j = dist(globalGenerator);
+            int k = dist(globalGenerator);
             if (i == j || j == k || i == k) continue;
 
             // Ordena i < j < k
