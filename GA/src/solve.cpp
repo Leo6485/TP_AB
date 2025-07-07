@@ -36,11 +36,11 @@ void Solve::solve(ifstream &input_file, const int crossover_id,
         if (generation % 2) ag->threeOpt(); 
         if(ag->count_gen_local_min > sqrt(ngen)){ 
             // if(ag->count_gen_local_min > sqrt(ngen) * 10) break; 
-        }        
+        }
 
         vector<int> parents = ag->parentsSelection(selection_id);
 
-        cout << ag->local_min << "\n";
+        // cout << ag->local_min << "\n";
         ag->crossover(parents, crossover_id);
 
         ag->mutation();

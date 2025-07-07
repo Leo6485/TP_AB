@@ -456,6 +456,7 @@ void Ag::printResults(ofstream &output_file) {
     auto it_min_makespan = min_element(fitness.begin(), fitness.end());
     int min_makespan_id = distance(fitness.begin(), it_min_makespan);
 
+    cout << *it_min_makespan << ", ";
     output_file << "Melhor Makespan: " << *it_min_makespan << endl;
     output_file << "Melhor Sequencia: " << population[min_makespan_id][0];
     for(int i = 1; i < ngenes; ++i){

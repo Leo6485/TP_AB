@@ -17,6 +17,7 @@ void printTimeValDelta(struct timeval start, struct timeval end, ofstream &outpu
         mil_sec_delta += 1000000;
     }
 
+    cout << sec_delta << "." << mil_sec_delta << "\n";
     output_file << "Tempo de Execucao (segundos): " << sec_delta << '.' << mil_sec_delta; 
 }
 
