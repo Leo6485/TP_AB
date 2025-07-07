@@ -10,7 +10,8 @@ using namespace std;
 void Solve::solve(ifstream &input_file, const int crossover_id,
                   const int selection_id, ofstream &output_file){
     // Parâmetros do algoritmo
-    const int npop = 1000;
+    const int npop = 400;
+    const int ngen = 100;
     const int nelite = 10;
     const double pcrossover = 0.9;
     const double pwinner = 0.95;
@@ -20,8 +21,8 @@ void Solve::solve(ifstream &input_file, const int crossover_id,
     instance.readInstance(input_file);
     input_file.close();
 
-    int ngen = instance.n * instance.m * 2;
-    ngen = min(ngen, 3000);
+    // int ngen = instance.n * instance.m * 2;
+    // ngen = min(ngen, 3000);
 
     const int ngenes = instance.n;
 
@@ -32,14 +33,14 @@ void Solve::solve(ifstream &input_file, const int crossover_id,
     for(int generation = 0; generation < ag->ngen; ++generation){
         ag->evaluatePopulation();
 
-        if(ag->count_gen_local_min > sqrt(ngen) * 5){ 
-            if(ag->count_gen_local_min > sqrt(ngen) * 10) break; 
-            
-            ag->threeOpt(); 
+        if (generation % 2) ag->threeOpt(); 
+        if(ag->count_gen_local_min > sqrt(ngen)){ 
+            // if(ag->count_gen_local_min > sqrt(ngen) * 10) break; 
         }        
 
         vector<int> parents = ag->parentsSelection(selection_id);
 
+        cout << ag->local_min << "\n";
         ag->crossover(parents, crossover_id);
 
         ag->mutation();

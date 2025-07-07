@@ -120,7 +120,7 @@ void Ag::threeOpt() {
         vector<int>& chromo = population[idv];
 
         // Ocasionalmente força a busca mesmo que ela não provoque melhora
-        int best_fitness = (uniform_int_distribution<int>(0, 9)(globalGenerator) == 0) ? INFINITY : fitness[idv];
+        int best_fitness = (uniform_int_distribution<int>(0, 4)(globalGenerator) == 0) ? INFINITY : fitness[idv];
         vector<int> candidate = chromo;
 
         for (int t = 0; t < 1000; ++t) {
@@ -205,35 +205,32 @@ vector<int> Ag::rouletteSelection(){
     return parents;
 }
 
-vector<int> Ag::tournamentSelection(){
-    vector<int> parents (npop);
+vector<int> Ag::tournamentSelection() {
+    int n_cidades = 5;
+    int idv_per_city = npop / n_cidades;
 
-    uniform_int_distribution<> parent_distribution(0, npop-1);
+    vector<int> parents(npop);
+    uniform_int_distribution<> parent_city_distribution(0, idv_per_city - 1);
     uniform_real_distribution<> winner_distribution(0.0, 1.0);
 
-    for(int i = 0; i < npop; ++i){
-        int parent_1 = parent_distribution(globalGenerator);
-        int parent_2;
+    for (int i = 0; i < npop; ++i) {
+        int cidade = (i * n_cidades) / npop;
 
+        int parent_1 = parent_city_distribution(globalGenerator) + cidade * idv_per_city;
+        int parent_2;
         do {
-            parent_2 = parent_distribution(globalGenerator);
+            parent_2 = parent_city_distribution(globalGenerator) + cidade * idv_per_city;
         } while (parent_1 == parent_2);
 
-        // Obtém a probabilidade do mais apto ser o vencedor
         float r = winner_distribution(globalGenerator);
 
-        if(fitness[parent_1] > fitness[parent_2]){
-            parents[i] = parent_2;
-            if(r > pwinner){
-                parents[i] = parent_1;
-            }
+        if (fitness[parent_1] > fitness[parent_2]) {
+            parents[i] = (r > pwinner) ? parent_1 : parent_2;
         } else {
-            parents[i] = parent_1;
-            if(r > pwinner){
-                parents[i] = parent_2;
-            }
+            parents[i] = (r > pwinner) ? parent_2 : parent_1;
         }
     }
+
     return parents;
 }
 
