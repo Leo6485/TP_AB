@@ -10,10 +10,10 @@ using namespace std;
 void Solve::solve(ifstream &input_file, const int crossover_id,
                   const int selection_id, ofstream &output_file){
     // Parâmetros do algoritmo
-    const int npop = 800;
-    const int nelite = 20;
-    const double pcrossover = 0.9;
-    const double pwinner = 0.9;
+    const int npop = 600;
+    const int nelite = 4;
+    const double pcrossover = 1.0;
+    const double pwinner = 0.95;
     const double pmutation = 0.01;
 
     Instance instance;
@@ -30,13 +30,16 @@ void Solve::solve(ifstream &input_file, const int crossover_id,
 
     for(int generation = 0; generation < ag->ngen; ++generation){
         ag->evaluatePopulation();
-
+/*
         if(ag->count_gen_local_min > sqrt(ngen) * 5){
-            if(ag->count_gen_local_min > sqrt(ngen) * 6) break; 
-            ag->twoOpt();
-            ag->threeOpt(); 
+        
+            
         }        
+*/
+        if(ag->count_gen_local_min > sqrt(ngen) * 5 + sqrt(sqrt(ngen))) break; 
 
+        ag->twoOpt();
+        ag->threeOpt(); 
         vector<int> parents = ag->parentsSelection(selection_id);
 
         ag->crossover(parents, crossover_id);
@@ -122,17 +125,17 @@ void Solve::solveFactorialTest(Instance &instance, int npop, int ngen, int ngene
 
 void Solve::generationsTest(ifstream &input_file, ofstream &output_file,
                             const int crossover_id, const int selection_id){
-    const int npop = 150;
-    const int ngen = 150;
-    const int nelite = 6;
-    const double pcrossover = 0.9;
-    const double pwinner = 0.9;
+    const int npop = 800;
+    const int nelite = 4;
+    const double pcrossover = 1.0;
+    const double pwinner = 0.95;
     const double pmutation = 0.01;
 
     Instance instance;
     instance.readInstance(input_file);
     input_file.close();
 
+    int ngen = instance.n * instance.m * 2;
     const int ngenes = instance.n;
 
     solveGenerationsTest(instance, npop, ngen, ngenes, nelite, pcrossover, pmutation,
@@ -154,6 +157,12 @@ void Solve::solveGenerationsTest(Instance &instance, int npop, int ngen, int nge
     ag->initPopulation();
     for(int generation = 0; generation < ag->ngen; ++generation){
         ag->evaluatePopulation();
+
+        if(ag->count_gen_local_min > sqrt(ngen) * 5){
+            if(ag->count_gen_local_min > sqrt(ngen) * 5 + sqrt(sqrt(ngen))) break; 
+            //ag->twoOpt();
+            ag->threeOpt(); 
+        }        
 
         vector<int> parents = ag->parentsSelection(selection_id);
         ag->crossover(parents, crossover_id);

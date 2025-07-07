@@ -8,27 +8,90 @@ using namespace std;
 // Gerador de números aleatórios global
 mt19937 globalGenerator(random_device{}());
 
+// Cria uma população inicial com individuos bons utilizando heurística e parte aleatória
 void Ag::initPopulation(){
-    // Inicializa a população inicial aleatória
-    for(vector<int> &individual : population){
+    // 30% dos indivíduos são inicializados de acordo com a heurística, enquanto os demais são inicializados de forma aleatória
+    int heuristic_amount = npop * 0.3;
+
+    int n = instance.n;
+  
+    // Calcula a soma do total dos tempos de cada uma das tarefas
+    vector<pair<int, int>> tasks; // pair {soma, idx}
+    tasks.reserve(n);
+    for(int i = 0; i < n; ++i){
+        vector<int> &machine = instance.machines[i];
+        int sum = accumulate(machine.begin(), machine.end(), 0);
+        tasks.push_back(make_pair(sum, i));
+    }
+
+    // Ordena em ordem decrescente as tarefas
+    sort(tasks.begin(), tasks.end(), greater<>());
+  
+    for(int idv = 0; idv < heuristic_amount; ++idv){
+        vector<int> sequence;
+
+        int sequence_size = sequence.size();
+
+        for (int i = 0; i < n; ++i){
+            int task_idx = tasks[i].second;
+
+            vector<pair<int, vector<int>>> candidates; // {makespan, sequencia}
+            candidates.reserve(sequence_size + 1);
+
+            // Testa todas as posições para inserir a tarefa atual
+            for (int j = 0; j <= sequence_size; ++j)
+            {
+                vector<int> new_sequence = sequence;
+
+                // Insere a tarefa na posição j
+                new_sequence.insert(new_sequence.begin() + j, task_idx);
+
+                int makespan = evaluateIndividual(new_sequence);
+
+                candidates.push_back(make_pair(makespan, new_sequence));
+            }
+
+            // Ordena os candidados em ordem decrescente do seu makespan
+            sort(candidates.begin(), candidates.end());
+
+            // Escolhe um dos melhores candidatos
+            int nbest = sqrt(sequence_size + 1);
+            uniform_int_distribution<> dist(0, nbest - 1);
+            int chosen = dist(globalGenerator);
+
+            sequence = candidates[chosen].second;
+        }
+
+        population[idv] = sequence;
+    }
+     
+    // Inicializa o restante da população inicial de forma aleatória
+    for(int idv = heuristic_amount + 1; idv < npop; ++idv){
+        vector<int>& individual = population[idv];
         iota(individual.begin(), individual.end(), 0);
         shuffle(individual.begin(), individual.end(), globalGenerator);
     }
+    
+}
+
+// Calcula o makespan de apenas uma sequência
+int Ag::evaluateIndividual(const vector<int> &sequence){
+    int m = instance.m;
+    vector<int> result(m, 0);
+
+    for (auto &item : sequence){
+        result[0] = result[0] + instance.machines[item][0];
+        for (int i = 1; i < m; i++){
+            result[i] = max((result[i - 1]), result[i]) + instance.machines[item][i];
+        }
+    }
+
+    return result[m - 1];
 }
 
 void Ag::evaluatePopulation(){
-    int m = instance.machines[0].size(); 
-    for(int idv = 0; idv < npop; ++idv){
-        vector<int> result(m + 1, 0);
-
-        for (auto &item : population[idv]) {
-            result[0] = result[0] + instance.machines[item][0];
-            for(int i = 1; i < m; i++) {
-                result[i] = max((result[i-1]), result[i]) + instance.machines[item][i];
-            }
-        }
-
-        fitness[idv] = result[result.size() - 2];
+    for(int idv = 0; idv < npop; ++idv){ 
+        fitness[idv] = evaluateIndividual(population[idv]);
     }
 }
 
@@ -40,9 +103,9 @@ void Ag::twoOpt() {
         vector<int>& chromo = population[idv];
         int bestFitness = (uniform_int_distribution<int>(0, 99)(globalGenerator) == 0) ? INFINITY : fitness[idv];
         vector<int> candidate = chromo;
-        vector<int> result(m, 0);
+        vector<int> result(m);
 
-        for (int t = 0; t < 100; ++t) {
+        for (int t = 0; t < 20; ++t) {
             int i = dist(globalGenerator);
             int j = dist(globalGenerator);
             if (i == j) continue;
@@ -51,17 +114,8 @@ void Ag::twoOpt() {
             candidate = chromo;
             reverse(candidate.begin() + i, candidate.begin() + j + 1);
 
-            // Calcula makespan
-            fill(result.begin(), result.end(), 0);
-            for (int job : candidate) {
-                result[0] += instance.machines[job][0];
-                for (int k = 1; k < m; ++k) {
-                    result[k] = max(result[k - 1], result[k]) + instance.machines[job][k];
-                }
-            }
-
-            int newFitness = result[m - 1];
-
+            int newFitness = evaluateIndividual(candidate);
+            
             if (newFitness < bestFitness) {
                 chromo = candidate;
                 bestFitness = newFitness;
@@ -75,14 +129,12 @@ void Ag::twoOpt() {
 void Ag::threeOpt() { 
     uniform_int_distribution<int> dist(0, instance.n - 1);
 
-    int m = instance.machines[0].size(); 
-
     for (int idv = 0; idv < npop; ++idv) {
         vector<int>& chromo = population[idv];
-        int bestFitness = (uniform_int_distribution<int>(0, 9)(globalGenerator) == 0) ? INFINITY : fitness[idv];
+        int best_fitness = (uniform_int_distribution<int>(0, 9)(globalGenerator) == 0) ? INFINITY : fitness[idv];
         vector<int> candidate = chromo;
 
-        for (int t = 0; t < 500; ++t) {
+        for (int t = 0; t < 20; ++t) {
             int i = dist(globalGenerator), j = dist(globalGenerator), k = dist(globalGenerator);
             if (i == j || j == k || i == k) continue;
 
@@ -111,20 +163,11 @@ void Ag::threeOpt() {
                         break;
                 }
 
-                // Calcula makespan
-                vector<int> result(m, 0);
-                for (int job : candidate) {
-                    result[0] += instance.machines[job][0];
-                    for (int mach = 1; mach < m; ++mach) {
-                        result[mach] = std::max(result[mach - 1], result[mach]) + instance.machines[job][mach];
-                    }
-                }
+                int new_fitness = evaluateIndividual(candidate);
 
-                int newFitness = result[m - 1];
-
-                if (newFitness < bestFitness) {
+                if (new_fitness < best_fitness) {
                     chromo = candidate;
-                    bestFitness = newFitness;
+                    best_fitness = new_fitness;
                     improved = true;
                     break; 
                 }
@@ -133,7 +176,7 @@ void Ag::threeOpt() {
             if (!improved) continue;
         }
 
-        fitness[idv] = bestFitness;
+        fitness[idv] = best_fitness;
     }
 }
 
@@ -401,9 +444,9 @@ void Ag::crossoverOX(vector<int> &parents){
 void Ag::crossover(vector<int> &parents, int crossover_id){
     // Seleciona qual maneira de crossover será utilizada pelo algoritmo  
     if(crossover_id == 1){
+        crossoverPMX(parents); 
+    } else if (crossover_id == 2){ 
         crossoverOX(parents);
-    } else if (crossover_id == 2){
-        crossoverPMX(parents);
     } else if (crossover_id == 3){
         crossoverACO(parents);
     } else {

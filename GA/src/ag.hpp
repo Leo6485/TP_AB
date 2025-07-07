@@ -26,6 +26,7 @@ class Ag{
 
         void initPopulation();
         void evaluatePopulation();
+        int evaluateIndividual(const vector<int> &sequence);
         void twoOpt();
         void threeOpt();
         vector<int> parentsSelection(const int selection_id);

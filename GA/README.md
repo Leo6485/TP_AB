@@ -63,12 +63,9 @@ A saída depende da solução escolhida:
 
 ### Exemplo de Saída do Programa
 ```
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-                  Resumo dos Resultados
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
- Menor distancia: 291
- Caminho: 14 -> 8 -> 4 -> 6 -> 2 -> 11 -> 13 -> 9 -> 7 -> 5 -> 3 -> 10 -> 0 -> 12 -> 1 -> 14
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Melhor Makespan: 903
+Melhor Sequencia: 0 6 8 3 23 26 12 27 2 1 28 11 24 9 10 16 19 7 25 18 13 20 15 21 4 5 14 22 29 17
+Tempo de Execucao (segundos): 40.535916
 ```
 
 ## Observações
