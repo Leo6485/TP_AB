@@ -6,9 +6,6 @@
 
 using namespace std;
 
-#define FACTORIAL_TEST_RESULTS_FILE "../data/results.csv"
-#define GENERATIONS_RESULTS_FILE "../data/generations.csv"
-
 void printTimeValDelta(struct timeval start, struct timeval end, ofstream &output_file) {
     // Calcula a diferença em segundos
     long int sec_delta = end.tv_sec - start.tv_sec;

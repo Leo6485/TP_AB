@@ -4,6 +4,7 @@
 Instance::Instance(){}
 
 void Instance::readInstance(ifstream &input_file){
+    // Lê e armazena o conteúdo do arquivo de entrada
     input_file >> n >> m;
 
     machines.assign(n, vector<int>(m, 0));

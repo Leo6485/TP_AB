@@ -1,5 +1,5 @@
 COMPILER = g++
-FLAGS = -Wall -Wextra -g
+FLAGS = -Wall -Wextra -g -O3
 BINARYDIR = binary
 EXENAME = ag
 

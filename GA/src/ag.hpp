@@ -7,6 +7,7 @@ class Ag{
     public:
         Instance instance;
 
+        // Parâmetros padrão do algoritmo genético
         int npop;
         int ngen;
         int ngenes;
@@ -25,21 +26,24 @@ class Ag{
         double pwinner;
 
         void initPopulation();
+
         void evaluatePopulation();
         int evaluateIndividual(const vector<int> &sequence);
-        void twoOpt();
+
         void threeOpt();
+
         vector<int> parentsSelection(const int selection_id);
         vector<int> tournamentSelection();
         vector<int> rouletteSelection();
 
-        void crossoverACO(vector<int> &parents);
         void crossoverPMX(vector<int> &parents);
         void crossoverOX(vector<int> &parents);
         void crossover(vector<int> &parents, int crossover_id);
+       
         void mutation();
         void copyPopulation();
         void elitism();
+        
         void printResults(ofstream &output_file);
         void printPopulation() const;
 

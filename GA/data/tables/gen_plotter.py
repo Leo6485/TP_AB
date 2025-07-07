@@ -41,9 +41,9 @@ plt.plot(geracoes, df_agregado['Maior Custo'], label='Maior Custo', color='red')
 #plt.plot(geracoes, df_agregado['Desvio Padrão'], label='Desvio Padrão', color='blue') # Adiciona o desvio padrão
 
 # Personalização do gráfico
-plt.title('Evolução do Fitness das Formigas')
+plt.title('Evolução do Fitness dos Indivíduos')
 plt.xlabel('Geração')
-plt.ylabel('Valor do Desvio Padrão')
+plt.ylabel('Makespan')
 plt.legend()
 plt.grid(True)
 plt.tight_layout()

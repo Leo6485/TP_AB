@@ -10,8 +10,8 @@ mt19937 globalGenerator(random_device{}());
 
 // Cria uma população inicial com individuos bons utilizando heurística e parte aleatória
 void Ag::initPopulation(){
-    // 30% dos indivíduos são inicializados de acordo com a heurística, enquanto os demais são inicializados de forma aleatória
-    int heuristic_amount = npop * 0.3;
+    // 10% dos indivíduos são inicializados de acordo com a heurística, enquanto os demais são inicializados de forma aleatória
+    int heuristic_amount = npop * 0.1;
 
     int n = instance.n;
   
@@ -62,6 +62,24 @@ void Ag::initPopulation(){
             sequence = candidates[chosen].second;
         }
 
+        // Aplica mutação para diversificar os indivíduos iniciais
+        uniform_int_distribution<> gene_distribution(0, ngenes - 1);
+        uniform_real_distribution<> mutation_distribution(0.0, 1.0);
+        for(int j = 0; j < (int) sequence.size(); ++j){
+            float r = mutation_distribution(globalGenerator);
+
+            // Aplica taxa de mutação alta para gerar diversidade
+            if(r <= 0.25){
+                int gene_idx;
+                do{
+                    gene_idx = gene_distribution(globalGenerator);
+                } while(gene_idx == j);
+
+                // Troca duas tarefas de posição
+                swap(sequence[j], sequence[gene_idx]);
+            }
+        }
+
         population[idv] = sequence;
     }
      
@@ -95,46 +113,18 @@ void Ag::evaluatePopulation(){
     }
 }
 
-void Ag::twoOpt() {
-    uniform_int_distribution<int> dist(0, instance.n - 1);
-    int m = instance.machines[0].size();  // número de máquinas
-
-    for (int idv = 0; idv < npop; ++idv) {
-        vector<int>& chromo = population[idv];
-        int bestFitness = (uniform_int_distribution<int>(0, 99)(globalGenerator) == 0) ? INFINITY : fitness[idv];
-        vector<int> candidate = chromo;
-        vector<int> result(m);
-
-        for (int t = 0; t < 20; ++t) {
-            int i = dist(globalGenerator);
-            int j = dist(globalGenerator);
-            if (i == j) continue;
-            if (i > j) swap(i, j);
-
-            candidate = chromo;
-            reverse(candidate.begin() + i, candidate.begin() + j + 1);
-
-            int newFitness = evaluateIndividual(candidate);
-            
-            if (newFitness < bestFitness) {
-                chromo = candidate;
-                bestFitness = newFitness;
-            }
-        }
-
-        fitness[idv] = bestFitness;
-    }
-}
-
 void Ag::threeOpt() { 
     uniform_int_distribution<int> dist(0, instance.n - 1);
 
     for (int idv = 0; idv < npop; ++idv) {
         vector<int>& chromo = population[idv];
+
+        // Ocasionalmente força a busca mesmo que ela não provoque melhora
         int best_fitness = (uniform_int_distribution<int>(0, 9)(globalGenerator) == 0) ? INFINITY : fitness[idv];
         vector<int> candidate = chromo;
 
-        for (int t = 0; t < 20; ++t) {
+        for (int t = 0; t < 1000; ++t) {
+            // Sorteia 3 posições distintas
             int i = dist(globalGenerator), j = dist(globalGenerator), k = dist(globalGenerator);
             if (i == j || j == k || i == k) continue;
 
@@ -145,26 +135,32 @@ void Ag::threeOpt() {
 
             bool improved = false;
 
+            // Testa até 3 variações de 3-opt entre [i,j,k]
             for (int variant = 0; variant < 3; ++variant) {
                 candidate = chromo;
 
                 switch (variant) {
+                    // Reversão nos dois blocos e depois no geral
                     case 0: 
                         reverse(candidate.begin() + i, candidate.begin() + j);
                         reverse(candidate.begin() + j, candidate.begin() + k);
                         reverse(candidate.begin() + i, candidate.begin() + k);
                         break;
+                    // Variante 1: inverte os dois blocos separadamente
                     case 1: 
                         reverse(candidate.begin() + i, candidate.begin() + j);
                         reverse(candidate.begin() + j, candidate.begin() + k);
                         break;
+                    // Variante 2: inverte só o segundo bloco
                     case 2: 
                         reverse(candidate.begin() + j, candidate.begin() + k);
                         break;
                 }
 
+                // Recalcula o makespan
                 int new_fitness = evaluateIndividual(candidate);
 
+                // Se for melhor, atualiza o cromossomo e o fitness
                 if (new_fitness < best_fitness) {
                     chromo = candidate;
                     best_fitness = new_fitness;
@@ -176,6 +172,7 @@ void Ag::threeOpt() {
             if (!improved) continue;
         }
 
+        // Atualiza o fitness final do indivíduo
         fitness[idv] = best_fitness;
     }
 }
@@ -240,74 +237,10 @@ vector<int> Ag::tournamentSelection(){
     return parents;
 }
 
+// Seleciona qual das estratégias de seleção de pais será utilizada
 vector<int> Ag::parentsSelection(const int selection_id){
     return selection_id == 1 ? tournamentSelection() : rouletteSelection();
 }
-
-void Ag::crossoverACO(vector<int> &parents) {
-    uniform_real_distribution<> pcrossover_distribution(0.0, 1.0);
-    uniform_int_distribution<> start_dist(0, instance.n - 1);
-
-    vector<int> candidates(instance.n);
-    vector<int> weights(instance.n);
-
-    for (int i = 0; i < npop - 1; i += 2) {
-        float r = pcrossover_distribution(globalGenerator);
-        int parent_1_idx = parents[i];
-        int parent_2_idx = parents[i + 1];
-
-        if (r > pcrossover) {
-            copy_n(population[parent_1_idx].begin(), instance.n, intermediate_population[i].begin());
-            copy_n(population[parent_2_idx].begin(), instance.n, intermediate_population[i + 1].begin());
-            continue;
-        }
-
-        const vector<int> &p1 = population[parent_1_idx];
-        const vector<int> &p2 = population[parent_2_idx];
-
-        // Reutilize a matriz de feromônio local
-        vector<vector<int>> pheromone(instance.n, vector<int>(instance.n, 10));
-        for (int j = 0; j < instance.n - 1; ++j) {
-            pheromone[p1[j]][p1[j + 1]] += 5;
-            pheromone[p2[j]][p2[j + 1]] += 5;
-        }
-
-        for (int ant = 0; ant < 2; ++ant) {
-            vector<int> &child = intermediate_population[i + ant];
-            vector<bool> visited(instance.n, false);
-            int current = start_dist(globalGenerator);
-
-            child[0] = current;
-            visited[current] = true;
-
-            for (int step = 1; step < instance.n; ++step) {
-                candidates.clear();
-                weights.clear();
-
-                for (int j = 0; j < instance.n; ++j) {
-                    if (!visited[j]) {
-                        candidates.push_back(j);
-                        weights.push_back(pheromone[current][j]);
-                    }
-                }
-
-                int next;
-                if (!candidates.empty() && accumulate(weights.begin(), weights.end(), 0) > 0) {
-                    discrete_distribution<int> dist(weights.begin(), weights.end());
-                    next = candidates[dist(globalGenerator)];
-                } else {
-                    // Fallback direto ao primeiro não visitado
-                    next = distance(visited.begin(), find(visited.begin(), visited.end(), false));
-                }
-
-                child[step] = next;
-                visited[next] = true;
-                current = next;
-            }
-        }
-    }
-}
-
 
 void Ag::crossoverPMX(vector<int> &parents){
     uniform_real_distribution<> pcrossover_distribution(0.0, 1.0);
@@ -394,8 +327,8 @@ void Ag::crossoverOX(vector<int> &parents){
         int parent_1 = parents[i];
         int parent_2 = parents[i+1];
 
+        // Se não ocorrer crossover, copia os genes dos pais diretamente
         if(r > pcrossover){
-            // Copia os genes dos pais diretamente
             copy(population[parent_1].begin(), population[parent_1].end(),
                  intermediate_population[i].begin());
             copy(population[parent_2].begin(), population[parent_2].end(),
@@ -417,23 +350,28 @@ void Ag::crossoverOX(vector<int> &parents){
             son_2.insert(population[parent_1][j]);
         }
 
+        // Preenchimento circular dos demais genes (fora do segmento)
         int j = (point_2 + 1) % ngenes;
         int j1 = j, j2 = j;
 
         while(j != point_1){
+            // Avança j1 até encontrar um gene do pai 1 que ainda não foi usado no filho 1
             while(son_1.find(population[parent_1][j1]) != son_1.end()){
                 son_1.erase(son_1.find(population[parent_1][j1]));
                 j1 = (j1+1) % ngenes;
             }
 
+            // Avança j2 até encontrar um gene do pai 2 que ainda não foi usado no filho 2
             while(son_2.find(population[parent_2][j2]) != son_2.end()){
                 son_2.erase(son_2.find(population[parent_2][j2]));
                 j2 = (j2+1) % ngenes;
             }
 
+            // Preenche a posição j com os genes não repetidos
             intermediate_population[i][j] = population[parent_1][j1];
             intermediate_population[i+1][j] = population[parent_2][j2];
 
+            // Avança os índices de forma circular
             j  = (j+1)  % ngenes;
             j1 = (j1+1) % ngenes;
             j2 = (j2+1) % ngenes;
@@ -447,8 +385,6 @@ void Ag::crossover(vector<int> &parents, int crossover_id){
         crossoverPMX(parents); 
     } else if (crossover_id == 2){ 
         crossoverOX(parents);
-    } else if (crossover_id == 3){
-        crossoverACO(parents);
     } else {
         cerr << "Crossover ID invalido\n";
         exit(1);
@@ -518,7 +454,7 @@ void Ag::elitism(){
     }
 }
 
-// Imprime os resultados
+// Imprime os resultados do algoritmo de acordo com as especificações
 void Ag::printResults(ofstream &output_file) {
     auto it_min_makespan = min_element(fitness.begin(), fitness.end());
     int min_makespan_id = distance(fitness.begin(), it_min_makespan);
@@ -531,6 +467,7 @@ void Ag::printResults(ofstream &output_file) {
     output_file << endl;
 }
 
+// Função para depuração dos indivíduos
 void Ag::printPopulation() const {
     for(int i = 0; i < npop; ++i){
         cout << "Percurso " << i+1 << ":" << endl;

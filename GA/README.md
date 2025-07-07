@@ -1,8 +1,22 @@
-# Algoritmo Genético para Resolver o Problema do Caixeiro Viajante (AG)
+# Algoritmo Genético para Resolver o Problema de Agendamento de Tarefas em Linha (FSSP)
 
 Grupo: Leonardo Guimarães de Oliveira, Guilherme Souza Barros, Vítor Oliveira Amorim.
 Disciplina: Algoritmos Bioinspirados
 Professora: Carolina Ribeiro Xavier
+
+## Sumário
+- [Introdução](#introdução)
+- [Compilação e Execução](#compilação-e-execução)
+    - [Exemplo de Compilação](#exemplo-de-compilação)
+    - [ID das Soluções Disponíveis](#id-das-soluções-disponíveis)
+    - [ID das Seleções de Pais Disponíveis](#id-das-seleções-de-pais-possíveis)
+    - [ID dos Cruzamentos Disponíveis](#id-dos-cruzamentos-disponíveis)
+    - [Exemplo de Execução](#exemplo-de-execução)
+- [Entrada e Saída](#entrada-e-saída)
+    - [Entrada](#entrada)
+    - [Saída](#saida)
+    - [Exemplo de Saída](#exemplo-de-saída-do-programa)
+- [Observações](#observações)
 
 ## Introdução
 
@@ -14,10 +28,12 @@ O FSSP consiste em um conjunto de *N* tarefas que devem ser processadas em um co
 
 A compilação do programa é feita via `Makefile`, que gera um executável chamado `./ag`.
 
-### # Exemplo de Compilação
+### Exemplo de Compilação
 ``` bash
 make
 ```
+
+Caso seja necessário apagar os arquivos binários do programa, basta utilizar o comando `make clean`.
 
 A execução permite escolher entre diferentes variações do algoritmo, usando a flag `-s` seguida do **ID da solução** desejada. Se nenhum ID for especificado, a **solução padrão (ID 1)** é executada.
 
@@ -32,15 +48,19 @@ Além disso, é possível selecionar qual maneira de seleção de pais e de cruz
 - `1`: seleção por torneio (padrão).
 - `2`: seleção por roleta.
 
-### ID dos Cruzamentos Disponíveis
-- `1`: cruzamento OX (Ordered Crossover) (padrão).
-- `2`: cruzamento PMX (Partially Mapped Crossover).
+Dentre as formas de seleção de pais, foi observado que a seleção por torneio apresentou os melhores resultados.
 
-Além disso, é possível especificar os arquivos de entrada com as especificações do problema. Para mais informações, consulte a seção [Entrada](#entrada).
+### ID dos Cruzamentos Disponíveis
+- `1`: cruzamento PMX (Partially Mapped Crossover) (padrão).
+- `2`: cruzamento OX (Ordered Crossover).
+
+Dentre as formas de cruzamento implementadas, foi observado que o cruzamento PMX apresentou os melhores resultados.
+
+Além disso, é possível especificar o **ID do arquivo de entrada**, utilizando a flag `-i`. Para mais informações, consulte a seção [Entrada](#entrada).
 
 ### Exemplo de Execução
 ```bash
-./ag -i sbg128_dist.txt -c 2 -p 1 -s 1
+./ag -i 1 -c 1 -p 1 -s 1
 ```
 
 ## Entrada e Saída
