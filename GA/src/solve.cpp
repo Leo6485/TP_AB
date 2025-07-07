@@ -13,14 +13,14 @@ void Solve::solve(ifstream &input_file, const int crossover_id,
     const int npop = 800;
     const int nelite = 20;
     const double pcrossover = 0.9;
-    const double pwinner = 0.95;
+    const double pwinner = 0.9;
     const double pmutation = 0.01;
 
     Instance instance;
     instance.readInstance(input_file);
     input_file.close();
 
-    int ngen = 400;
+    int ngen = instance.n * instance.m * 2;
 
     const int ngenes = instance.n;
 
@@ -31,9 +31,8 @@ void Solve::solve(ifstream &input_file, const int crossover_id,
     for(int generation = 0; generation < ag->ngen; ++generation){
         ag->evaluatePopulation();
 
-
-        if(ag->count_gen_local_min > 100){
-            if(ag->count_gen_local_min > 150) break; 
+        if(ag->count_gen_local_min > sqrt(ngen) * 5){
+            if(ag->count_gen_local_min > sqrt(ngen) * 6) break; 
             ag->twoOpt();
             ag->threeOpt(); 
         }        
@@ -56,7 +55,6 @@ void Solve::solve(ifstream &input_file, const int crossover_id,
 void Solve::factorialTest(ifstream &input_file, ofstream &output_file,
                           const int crossover_id, const int selection_id){
     const int npop = 800;
-    const int ngen = 400;
     const int vnelite[] = {2, 6, 10, 20, 40};
     const double vpcrossover[] = {1.0, 0.9};
     const double pwinner = 0.9;
@@ -65,6 +63,8 @@ void Solve::factorialTest(ifstream &input_file, ofstream &output_file,
     Instance instance;
     instance.readInstance(input_file);
     input_file.close();
+
+    int ngen = instance.n * instance.m * 2;
 
     const int ngenes = instance.n;
 

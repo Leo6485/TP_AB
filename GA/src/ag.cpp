@@ -5,6 +5,7 @@
 
 using namespace std;
 
+// Gerador de números aleatórios global
 mt19937 globalGenerator(random_device{}());
 
 void Ag::initPopulation(){
@@ -16,12 +17,13 @@ void Ag::initPopulation(){
 }
 
 void Ag::evaluatePopulation(){
+    int m = instance.machines[0].size(); 
     for(int idv = 0; idv < npop; ++idv){
-        vector<int> result(instance.machines[0].size() + 1, 0);
+        vector<int> result(m + 1, 0);
 
         for (auto &item : population[idv]) {
             result[0] = result[0] + instance.machines[item][0];
-            for(int i = 1; i < (int) instance.machines[0].size(); i++) {
+            for(int i = 1; i < m; i++) {
                 result[i] = max((result[i-1]), result[i]) + instance.machines[item][i];
             }
         }
@@ -32,38 +34,37 @@ void Ag::evaluatePopulation(){
 
 void Ag::twoOpt() {
     uniform_int_distribution<int> dist(0, instance.n - 1);
-    std::mt19937 rng(std::random_device{}());
+    int m = instance.machines[0].size();  // número de máquinas
 
     for (int idv = 0; idv < npop; ++idv) {
         vector<int>& chromo = population[idv];
-        // Probabilidade de substituir
-        int bestFitness = (rand() % 100 == 0) ? INFINITY : fitness[idv];
-        bool improved = false;
+        int bestFitness = (uniform_int_distribution<int>(0, 99)(globalGenerator) == 0) ? INFINITY : fitness[idv];
+        vector<int> candidate = chromo;
+        vector<int> result(m, 0);
 
         for (int t = 0; t < 100; ++t) {
-            int i = dist(rng);
-            int j = dist(rng);
+            int i = dist(globalGenerator);
+            int j = dist(globalGenerator);
             if (i == j) continue;
-            if (i > j) std::swap(i, j);
+            if (i > j) swap(i, j);
 
-            reverse(chromo.begin() + i, chromo.begin() + j + 1);
+            candidate = chromo;
+            reverse(candidate.begin() + i, candidate.begin() + j + 1);
 
             // Calcula makespan
-            vector<int> result(instance.machines[0].size() + 1, 0);
-            for (auto& item : chromo) {
-                result[0] = result[0] + instance.machines[item][0];
-                for (int k = 1; k < (int)instance.machines[0].size(); ++k) {
-                    result[k] = max(result[k - 1], result[k]) + instance.machines[item][k];
+            fill(result.begin(), result.end(), 0);
+            for (int job : candidate) {
+                result[0] += instance.machines[job][0];
+                for (int k = 1; k < m; ++k) {
+                    result[k] = max(result[k - 1], result[k]) + instance.machines[job][k];
                 }
             }
-            int newFitness = result[result.size() - 2];
+
+            int newFitness = result[m - 1];
 
             if (newFitness < bestFitness) {
+                chromo = candidate;
                 bestFitness = newFitness;
-                improved = true;
-            } else {
-                // Reverte a inversão se não melhorou
-                reverse(chromo.begin() + i, chromo.begin() + j + 1);
             }
         }
 
@@ -71,77 +72,65 @@ void Ag::twoOpt() {
     }
 }
 
-void Ag::threeOpt() {
-    std::mt19937 rng(std::random_device{}());
+void Ag::threeOpt() { 
     uniform_int_distribution<int> dist(0, instance.n - 1);
+
+    int m = instance.machines[0].size(); 
 
     for (int idv = 0; idv < npop; ++idv) {
         vector<int>& chromo = population[idv];
-        int bestFitness = (rand() % 10 == 0) ? INFINITY : fitness[idv];
+        int bestFitness = (uniform_int_distribution<int>(0, 9)(globalGenerator) == 0) ? INFINITY : fitness[idv];
+        vector<int> candidate = chromo;
 
         for (int t = 0; t < 500; ++t) {
-            int i = dist(rng), j = dist(rng), k = dist(rng);
+            int i = dist(globalGenerator), j = dist(globalGenerator), k = dist(globalGenerator);
             if (i == j || j == k || i == k) continue;
 
             // Ordena i < j < k
-            if (i > j) std::swap(i, j);
-            if (j > k) std::swap(j, k);
-            if (i > j) std::swap(i, j);
+            if (i > j) swap(i, j);
+            if (j > k) swap(j, k);
+            if (i > j) swap(i, j);
 
-            // Divide em 4 segmentos: [0,i), [i,j), [j,k), [k,end)
-            vector<int> A(chromo.begin(), chromo.begin() + i);
-            vector<int> B(chromo.begin() + i, chromo.begin() + j);
-            vector<int> C(chromo.begin() + j, chromo.begin() + k);
-            vector<int> D(chromo.begin() + k, chromo.end());
+            bool improved = false;
 
-            vector<vector<int>> variations = {
-                // original: A B C D
-                chromo, // original
-                // 1: A C B D
-                [] (const vector<int>& A, const vector<int>& B, const vector<int>& C, const vector<int>& D) {
-                    vector<int> tmp = A;
-                    tmp.insert(tmp.end(), C.begin(), C.end());
-                    tmp.insert(tmp.end(), B.begin(), B.end());
-                    tmp.insert(tmp.end(), D.begin(), D.end());
-                    return tmp;
-                }(A, B, C, D),
-                // 2: A rev(B) rev(C) D
-                [] (const vector<int>& A, vector<int> B, vector<int> C, const vector<int>& D) {
-                    reverse(B.begin(), B.end());
-                    reverse(C.begin(), C.end());
-                    vector<int> tmp = A;
-                    tmp.insert(tmp.end(), B.begin(), B.end());
-                    tmp.insert(tmp.end(), C.begin(), C.end());
-                    tmp.insert(tmp.end(), D.begin(), D.end());
-                    return tmp;
-                }(A, B, C, D),
-                // 3: A rev(C) B D
-                [] (const vector<int>& A, const vector<int>& B, vector<int> C, const vector<int>& D) {
-                    reverse(C.begin(), C.end());
-                    vector<int> tmp = A;
-                    tmp.insert(tmp.end(), C.begin(), C.end());
-                    tmp.insert(tmp.end(), B.begin(), B.end());
-                    tmp.insert(tmp.end(), D.begin(), D.end());
-                    return tmp;
-                }(A, B, C, D)
-            };
+            for (int variant = 0; variant < 3; ++variant) {
+                candidate = chromo;
 
-            for (const auto& candidate : variations) {
+                switch (variant) {
+                    case 0: 
+                        reverse(candidate.begin() + i, candidate.begin() + j);
+                        reverse(candidate.begin() + j, candidate.begin() + k);
+                        reverse(candidate.begin() + i, candidate.begin() + k);
+                        break;
+                    case 1: 
+                        reverse(candidate.begin() + i, candidate.begin() + j);
+                        reverse(candidate.begin() + j, candidate.begin() + k);
+                        break;
+                    case 2: 
+                        reverse(candidate.begin() + j, candidate.begin() + k);
+                        break;
+                }
+
                 // Calcula makespan
-                vector<int> result(instance.machines[0].size() + 1, 0);
-                for (auto& item : candidate) {
-                    result[0] += instance.machines[item][0];
-                    for (int m = 1; m < (int)instance.machines[0].size(); ++m) {
-                        result[m] = max(result[m - 1], result[m]) + instance.machines[item][m];
+                vector<int> result(m, 0);
+                for (int job : candidate) {
+                    result[0] += instance.machines[job][0];
+                    for (int mach = 1; mach < m; ++mach) {
+                        result[mach] = std::max(result[mach - 1], result[mach]) + instance.machines[job][mach];
                     }
                 }
-                int newFitness = result[result.size() - 2];
+
+                int newFitness = result[m - 1];
+
                 if (newFitness < bestFitness) {
                     chromo = candidate;
                     bestFitness = newFitness;
-                    break;
+                    improved = true;
+                    break; 
                 }
             }
+
+            if (!improved) continue;
         }
 
         fitness[idv] = bestFitness;
