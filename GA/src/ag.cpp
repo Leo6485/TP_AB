@@ -209,15 +209,17 @@ vector<int> Ag::rouletteSelection(){
 
 vector<int> Ag::tournamentSelection() {
     int n_cidades = 5;
-    int idv_per_city = npop / n_cidades;
+    int idv_per_city = npop / n_cidades; // Calcula o número de indivíduos por cidade
 
     vector<int> parents(npop);
     uniform_int_distribution<> parent_city_distribution(0, idv_per_city - 1);
     uniform_real_distribution<> winner_distribution(0.0, 1.0);
 
     for (int i = 0; i < npop; ++i) {
+        // Calcula a cidade que o indivíduo pertence
         int cidade = (i * n_cidades) / npop;
 
+        // Seleciona indivíduos diferentes da mesma cidade
         int parent_1 = parent_city_distribution(globalGenerator) + cidade * idv_per_city;
         int parent_2;
         do {
@@ -226,6 +228,7 @@ vector<int> Ag::tournamentSelection() {
 
         float r = winner_distribution(globalGenerator);
 
+        // Seleciona o melhor, se r <= pwinner, e o pior, caso contrário
         if (fitness[parent_1] > fitness[parent_2]) {
             parents[i] = (r > pwinner) ? parent_1 : parent_2;
         } else {
