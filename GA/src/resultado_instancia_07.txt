@@ -1,1 +1,0 @@
-Tempo de Execucao (segundos): 19.732745
